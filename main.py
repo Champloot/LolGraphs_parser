@@ -10,7 +10,7 @@ from keyboard import *
 
 def LeagueGraphs_parse(data_0: dict) -> str:
     data = {k: v.lower() for k, v in data_0.items()}
-    lolgraphs_url = f"https://www.leagueofgraphs.com/summoner/champions/{data['country']}{data['player']}"
+    lolgraphs_url = f"https://www.leagueofgraphs.com/summoner/champions/{data['country']}/{data['player']}-{data['postfix']}"
     headers = {"Accept": "*/*",
                "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/106.0.0.0 Safari/537.36"}
     req = requests.get(url=lolgraphs_url, headers=headers)
@@ -88,6 +88,7 @@ class FSMWhat_parse(StatesGroup):
 # Lol FSM
 class FSMParse_LolGraphs(StatesGroup):
     which_player_LG = State()
+    which_postfix_LG = State()
     country_LG = State()
     what_champion_LG = State()
     what_champion_parameter_LG = State()
@@ -122,21 +123,28 @@ async def LGparse_cancel_handeler(message: types.Message, state: FSMContext):
     await state.finish()
     await message.reply('Отмена')
 
-
-# 2-ая стадия - сервер
+# 2-ая стадия - постфикс ника (после решетки)
 async def LGparse_which_player(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['player'] = message.text
     await FSMParse_LolGraphs.next()
-    await message.reply('Сервер какой страны?', reply_markup=kb_LolGraphs_2_step_FSMParse)
+    await message.reply('Постфикс ника (то что после решетки)?', reply_markup=kb_LolGraphs_2_step_FSMParse)
+
+
+# 2-ая стадия - сервер
+async def LGparse_what_postfix(message: types.Message, state: FSMContext):
+    async with state.proxy() as data:
+        data['postfix'] = message.text
+    await FSMParse_LolGraphs.next()
+    await message.reply('Сервер какой страны?', reply_markup=kb_LolGraphs_3_step_FSMParse)
 
 
 # 3-ья стадия - персонаж
 async def LGparse_which_country(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
-        data['country'] = message.text + '/'
+        data['country'] = message.text
     await FSMParse_LolGraphs.next()
-    await message.reply('Какой чемпион?', reply_markup=kb_LolGraphs_3_step_FSMParse)
+    await message.reply('Какой чемпион?', reply_markup=kb_LolGraphs_4_step_FSMParse)
 
 
 # 4-ая стадия - параметр
@@ -144,7 +152,7 @@ async def LGparse_what_champion(message: types.Message, state: FSMContext):
     async with state.proxy() as data:
         data['champ'] = message.text
     await FSMParse_LolGraphs.next()
-    await message.reply('Какой его параметр?', reply_markup=kb_LolGraphs_4_step_FSMParse)
+    await message.reply('Какой его параметр?', reply_markup=kb_LolGraphs_5_step_FSMParse)
 
 
 # 5-ая стадия - конец
@@ -166,6 +174,7 @@ def register_handlers_all_parse(dp: Dispatcher):
 def register_handlers_parse(dp: Dispatcher):
     dp.register_message_handler(LGparse_cancel_handeler, state="*", commands='cancel')
     dp.register_message_handler(LGparse_which_player, state=FSMParse_LolGraphs.which_player_LG)
+    dp.register_message_handler(LGparse_what_postfix, state=FSMParse_LolGraphs.which_postfix_LG)
     dp.register_message_handler(LGparse_which_country, state=FSMParse_LolGraphs.country_LG)
     dp.register_message_handler(LGparse_what_champion, state=FSMParse_LolGraphs.what_champion_LG)
     dp.register_message_handler(LGparse_champ_parameter, state=FSMParse_LolGraphs.what_champion_parameter_LG)
