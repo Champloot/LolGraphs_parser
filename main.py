@@ -1,8 +1,9 @@
 import requests
-from bs4 import BeautifulSoup
 from aiogram import Dispatcher, types
 from aiogram.dispatcher import FSMContext
 from aiogram.dispatcher.filters.state import State, StatesGroup
+from bs4 import BeautifulSoup
+
 from keyboard import *
 
 
@@ -77,8 +78,10 @@ def LeagueGraphs_parse(data_0: dict) -> str:
     except KeyError:
         return "Check data!"
 
+
 async def cmd_start(message: types.Message):
     await message.reply('Hi!', reply_markup=all_kb)
+
 
 # Общая FSM
 class FSMWhat_parse(StatesGroup):
@@ -97,12 +100,12 @@ class FSMParse_LolGraphs(StatesGroup):
 # Функция-стартер
 async def what_parse_start(message: types.Message):
     await FSMWhat_parse.what_parse.set()
-    await message.reply('Что парсить?', reply_markup=gamse_kb)
+    await message.reply('Что парсить?', reply_markup=games_kb)
 
 
 # Функция-роутер
 async def what_parse(message: types.Message):
-    if message.text.lower() == "lol":
+    if message.text.lower() == "lol_graphs":
         await LGparse_cmd_start(message)
 
 
@@ -122,6 +125,7 @@ async def LGparse_cancel_handeler(message: types.Message, state: FSMContext):
         return
     await state.finish()
     await message.reply('Отмена')
+
 
 # 2-ая стадия - постфикс ника (после решетки)
 async def LGparse_which_player(message: types.Message, state: FSMContext):
